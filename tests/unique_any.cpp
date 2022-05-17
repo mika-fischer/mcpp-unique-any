@@ -7,8 +7,12 @@
 
 // runtime tests
 auto main() -> int {
+    auto any = mcpp::unique_any();
+    assert(!any.has_value());
     auto ptr = std::make_unique<std::string>("Foo");
-    auto any = mcpp::unique_any(std::move(ptr));
+    any = mcpp::unique_any(std::move(ptr));
     assert(any.has_value());
     assert(*mcpp::any_cast<decltype(ptr) &>(any) == "Foo");
+    ptr = mcpp::any_cast<decltype(ptr)>(std::move(any));
+    assert(*ptr == "Foo");
 }
