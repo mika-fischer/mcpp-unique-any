@@ -134,6 +134,11 @@ class unique_any {
     std::unique_ptr<interface> state_;
 };
 
+// https://en.cppreference.com/w/cpp/utility/any/swap2
+inline void swap(unique_any &lhs, unique_any &rhs) noexcept {
+    lhs.swap(rhs);
+}
+
 // https://en.cppreference.com/w/cpp/utility/any/any_cast (1)
 template <class T>
 auto any_cast(const unique_any &operand) -> T {
