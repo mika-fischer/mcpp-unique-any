@@ -1,0 +1,15 @@
+BasedOnStyle: LLVM
+Standard: c++17
+
+# Indentation
+UseTab: Never
+IndentWidth: 4
+IndentCaseLabels: true
+
+# Line breaks
+ColumnLimit: 120
+AlwaysBreakTemplateDeclarations: Yes
+AllowShortFunctionsOnASingleLine: InlineOnly
+
+# Alignment
+DerivePointerAlignment: false
