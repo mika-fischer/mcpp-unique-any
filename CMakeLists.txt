@@ -26,5 +26,6 @@ if (${PROJECT_NAME}_WITH_INSTALL)
 endif ()
 
 if (${PROJECT_NAME}_WITH_TESTS)
+    include(CTest)
     add_subdirectory(tests)
 endif ()

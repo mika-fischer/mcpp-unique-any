@@ -198,6 +198,8 @@ struct small_buffer_handler {
                 return get(*self);
             case action::typeinfo:
                 return type_info();
+            default:
+                std::terminate();
         }
     }
 
@@ -250,6 +252,8 @@ struct default_handler {
                 return get(*self);
             case action::typeinfo:
                 return type_info();
+            default:
+                std::terminate();
         }
     }
 

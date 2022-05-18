@@ -3,16 +3,65 @@
 // (See accompanying file LICENSE.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 
 #include "mcpp/unique_any.hpp"
+#include <catch2/catch_test_macros.hpp>
 #include <string>
 
-// runtime tests
-auto main() -> int {
+using namespace mcpp;
+
+namespace {
+
+struct small {
+    int i;
+};
+
+struct large {
+    int64_t a;
+    int64_t b;
+    int64_t c;
+    int64_t d;
+};
+
+static_assert(sizeof(unique_any) == 4 * sizeof(void *));
+static_assert(sizeof(small) + sizeof(void *) <= sizeof(unique_any));
+static_assert(sizeof(large) + sizeof(void *) > sizeof(unique_any));
+
+int n_allocs = 0;
+
+} // namespace
+
+auto operator new(std::size_t size) -> void * {
+    n_allocs += 1;
+    return std::malloc(size == 0 ? 1 : size);
+}
+
+void operator delete(void *mem) {
+    n_allocs -= 1;
+    std::free(mem);
+}
+
+TEST_CASE("basic") {
     auto any = mcpp::unique_any();
-    assert(!any.has_value());
+    CHECK(!any.has_value());
     auto ptr = std::make_unique<std::string>("Foo");
     any = mcpp::unique_any(std::move(ptr));
-    assert(any.has_value());
-    assert(*mcpp::any_cast<decltype(ptr) &>(any) == "Foo");
+    CHECK(any.has_value());
+    CHECK(*mcpp::any_cast<decltype(ptr) &>(any) == "Foo");
     ptr = mcpp::any_cast<decltype(ptr)>(std::move(any));
-    assert(*ptr == "Foo");
+    CHECK(*ptr == "Foo");
+}
+
+TEST_CASE("small_buffer") {
+    auto pre = n_allocs;
+    auto any = unique_any(small{});
+    CHECK(n_allocs - pre == 0);
+}
+
+TEST_CASE("allocating") {
+    auto pre = n_allocs;
+    auto any = unique_any(large{});
+    CHECK(n_allocs - pre == 1);
+
+    pre = n_allocs;
+    any = {};
+    CHECK(n_allocs - pre == -1);
 }
