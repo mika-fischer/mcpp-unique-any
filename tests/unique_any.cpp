@@ -34,7 +34,7 @@ auto operator new(std::size_t size) -> void * {
     return std::malloc(size == 0 ? 1 : size);
 }
 
-void operator delete(void *mem) {
+void operator delete(void *mem) noexcept {
     n_allocs -= 1;
     std::free(mem);
 }

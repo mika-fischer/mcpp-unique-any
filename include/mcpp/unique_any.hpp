@@ -234,7 +234,8 @@ struct small_buffer_handler {
 template <typename Allocator, typename std::allocator_traits<Allocator>::size_type size>
 struct allocator_deleter {
     void operator()(typename std::allocator_traits<Allocator>::pointer p) noexcept {
-        std::allocator_traits<Allocator>::deallocate(Allocator{}, p, size);
+        auto allocator = Allocator{};
+        std::allocator_traits<Allocator>::deallocate(allocator, p, size);
     }
 };
 
