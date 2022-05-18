@@ -1,7 +1,9 @@
 FormatStyle: file
 Checks: >-
   *,
-  -abseil*,-altera-*,-android-*,-darwin-*,-fuchsia-*,-google-*,-linuxkernel-*,-llvm*,-mpi-*,-objc-*,-zircon-*
+  -abseil*,-altera-*,-android-*,-darwin-*,-fuchsia-*,-google-*,-linuxkernel-*,-llvm*,-mpi-*,-objc-*,-zircon-*,
+  -cppcoreguidelines-pro-type-union-access,
+  -readability-identifier-length
 CheckOptions:
   # https://clang.llvm.org/extra/clang-tidy/checks/misc-non-private-member-variables-in-classes.html
   - key:   misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic

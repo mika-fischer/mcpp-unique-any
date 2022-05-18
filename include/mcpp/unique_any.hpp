@@ -26,7 +26,7 @@ class unique_any {
     ///////////////////////////////////////////////////////////////////////////
     // Constructors
     // https://en.cppreference.com/w/cpp/utility/any/any (1)
-    constexpr unique_any() = default;
+    constexpr unique_any() noexcept = default;
     // https://en.cppreference.com/w/cpp/utility/any/any (2)
     unique_any(const unique_any &other) = delete;
     // https://en.cppreference.com/w/cpp/utility/any/any (3)
@@ -50,7 +50,7 @@ class unique_any {
     ///////////////////////////////////////////////////////////////////////////
     // Assignment operators
     // https://en.cppreference.com/w/cpp/utility/any/operator%3D (1)
-    auto operator=(const unique_any &rhs) = delete;
+    auto operator=(const unique_any &rhs) -> unique_any & = delete;
     // https://en.cppreference.com/w/cpp/utility/any/operator%3D (2)
     auto operator=(unique_any &&rhs) noexcept -> unique_any & {
         unique_any(std::move(rhs)).swap(*this);
@@ -144,7 +144,7 @@ template <class T>
 auto any_cast(const unique_any &operand) -> T {
     using U = std::remove_cv_t<std::remove_reference_t<T>>;
     static_assert(std::is_constructible_v<T, const U &>);
-    if (auto ptr = any_cast<U>(&operand)) {
+    if (auto ptr = any_cast<std::add_const_t<U>>(&operand)) {
         return static_cast<T>(*ptr);
     }
     throw std::bad_any_cast();
@@ -175,6 +175,7 @@ auto any_cast(unique_any &&operand) -> T {
 // https://en.cppreference.com/w/cpp/utility/any/any_cast (4)
 template <class T>
 auto any_cast(const unique_any *operand) noexcept -> const T * {
+    static_assert(!std::is_reference_v<T>);
     if (operand && operand->type() == typeid(T)) {
         return operand->unsafe_cast<T>();
     }
@@ -184,6 +185,7 @@ auto any_cast(const unique_any *operand) noexcept -> const T * {
 // https://en.cppreference.com/w/cpp/utility/any/any_cast (5)
 template <class T>
 auto any_cast(unique_any *operand) noexcept -> T * {
+    static_assert(!std::is_reference_v<T>);
     if (operand && operand->type() == typeid(T)) {
         return operand->unsafe_cast<T>();
     }
