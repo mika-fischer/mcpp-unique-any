@@ -11,14 +11,11 @@ using namespace mcpp;
 namespace {
 
 struct small {
-    int i;
+    void *a[3];
 };
 
 struct large {
-    int64_t a;
-    int64_t b;
-    int64_t c;
-    int64_t d;
+    void *a[4];
 };
 
 static_assert(sizeof(unique_any) == 4 * sizeof(void *));
@@ -40,14 +37,22 @@ void operator delete(void *mem) noexcept {
 }
 
 TEST_CASE("basic") {
-    auto any = mcpp::unique_any();
+    auto any = unique_any();
     CHECK(!any.has_value());
+    CHECK(any.type() == typeid(void));
+
     auto ptr = std::make_unique<std::string>("Foo");
-    any = mcpp::unique_any(std::move(ptr));
+    CHECK(ptr != nullptr);
+    any = std::move(ptr);
     CHECK(any.has_value());
-    CHECK(*mcpp::any_cast<decltype(ptr) &>(any) == "Foo");
-    ptr = mcpp::any_cast<decltype(ptr)>(std::move(any));
+    CHECK(any.type() == typeid(decltype(ptr)));
+    CHECK(ptr == nullptr);
+
+    CHECK(*any_cast<decltype(ptr) &>(any) == "Foo");
+    ptr = any_cast<decltype(ptr)>(std::move(any));
     CHECK(*ptr == "Foo");
+    CHECK(any.has_value());
+    CHECK(any_cast<decltype(ptr) &>(any) == nullptr);
 }
 
 TEST_CASE("small_buffer") {
