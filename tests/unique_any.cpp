@@ -48,6 +48,11 @@ TEST_CASE("basic") {
     CHECK(any.type() == typeid(decltype(ptr)));
     CHECK(ptr == nullptr);
 
+    auto any2 = std::move(any);
+    CHECK(!any.has_value());
+    CHECK(*any_cast<decltype(ptr) &>(any2) == "Foo");
+    any = std::move(any2);
+
     CHECK(*any_cast<decltype(ptr) &>(any) == "Foo");
     ptr = any_cast<decltype(ptr)>(std::move(any));
     CHECK(*ptr == "Foo");
