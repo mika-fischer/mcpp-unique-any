@@ -45,13 +45,15 @@ class unique_any {
     ///////////////////////////////////////////////////////////////////////////
     // Constructors
     // https://en.cppreference.com/w/cpp/utility/any/any (1)
-    constexpr unique_any() noexcept = default;
+    constexpr unique_any() noexcept : h_(nullptr) {}
     // https://en.cppreference.com/w/cpp/utility/any/any (2)
     unique_any(const unique_any &other) = delete;
     // https://en.cppreference.com/w/cpp/utility/any/any (3)
     unique_any(unique_any &&other) noexcept {
         if (other.h_ != nullptr) {
             other.call(action::move, this);
+        } else {
+            h_ = nullptr;
         }
     }
     // https://en.cppreference.com/w/cpp/utility/any/any (4)
@@ -179,7 +181,7 @@ class unique_any {
     template <typename T>
     friend auto any_cast(unique_any *operand) noexcept -> T *;
 
-    handle_func h_ = nullptr;
+    handle_func h_;
     storage s_;
 };
 
