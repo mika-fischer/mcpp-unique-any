@@ -54,7 +54,7 @@ jobs:
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE:STRING=Debug
       - name: Build
-        run: cmake --build build --config Debug --target all
+        run: cmake --build build --config Debug
       - name: Test
         working-directory: build
         run: ctest --build-config Debug --output-on-failure

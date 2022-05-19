@@ -1,0 +1,27 @@
+name: Ubuntu
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  gcc:
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - "22.04"
+          - "20.04"
+          - "18.04"
+    runs-on: ubuntu-${{ matrix.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: Configure
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE:STRING=Debug
+      - name: Build
+        run: cmake --build build --config Debug
+      - name: Test
+        working-directory: build
+        run: ctest --build-config Debug --output-on-failure
