@@ -1,4 +1,9 @@
 # unique-any
+
+[![Ubuntu](https://github.com/mika-fischer/mcpp-unique-any/actions/workflows/ubuntu.yml/badge.svg)](https://github.com/mika-fischer/mcpp-unique-any/actions/workflows/ubuntu.yml)
+[![Windows](https://github.com/mika-fischer/mcpp-unique-any/actions/workflows/windows.yml/badge.svg)](https://github.com/mika-fischer/mcpp-unique-any/actions/workflows/windows.yml)
+[![macOS](https://github.com/mika-fischer/mcpp-unique-any/actions/workflows/macos.yml/badge.svg)](https://github.com/mika-fischer/mcpp-unique-any/actions/workflows/macos.yml)
+
 This is a `std::any`-like type for C++17 that works with move-only types
 
 ## License
