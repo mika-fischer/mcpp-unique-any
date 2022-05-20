@@ -70,20 +70,20 @@ class unique_any {
     }
     // https://en.cppreference.com/w/cpp/utility/any/any (4)
     template <class ValueType, class T = std::decay_t<ValueType>,
-              std::enable_if_t<!std::is_same_v<T, unique_any> && !detail::is_in_place_type_v<T>> * = nullptr>
+              class = std::enable_if_t<!std::is_same_v<T, unique_any> && !detail::is_in_place_type_v<T>>>
     unique_any(ValueType &&value) : vtable_(&detail::handler<T>::vtable) {
         detail::handler<T>::create(&storage_, std::forward<ValueType>(value));
     }
     // https://en.cppreference.com/w/cpp/utility/any/any (5)
     template <class ValueType, class... Args, class T = std::decay_t<ValueType>,
-              std::enable_if_t<std::is_constructible_v<T, Args...>> * = nullptr>
+              class = std::enable_if_t<std::is_constructible_v<T, Args...>>>
     explicit unique_any(std::in_place_type_t<ValueType> /*unused*/, Args &&...args)
         : vtable_(&detail::handler<T>::vtable) {
         detail::handler<T>::create(&storage_, std::forward<Args>(args)...);
     }
     // https://en.cppreference.com/w/cpp/utility/any/any (6)
     template <class ValueType, class U, class... Args, class T = std::decay_t<ValueType>,
-              std::enable_if_t<std::is_constructible_v<T, std::initializer_list<U> &, Args...>> * = nullptr>
+              class = std::enable_if_t<std::is_constructible_v<T, std::initializer_list<U> &, Args...>>>
     explicit unique_any(std::in_place_type_t<ValueType> /*unused*/, std::initializer_list<U> il, Args &&...args)
         : vtable_(&detail::handler<T>::vtable) {
         detail::handler<T>::create(&storage_, il, std::forward<Args>(args)...);
@@ -100,7 +100,7 @@ class unique_any {
     }
     // https://en.cppreference.com/w/cpp/utility/any/operator%3D (3)
     template <typename ValueType, class T = std::decay_t<ValueType>,
-              std::enable_if_t<!std::is_same_v<T, unique_any>> * = nullptr>
+              class = std::enable_if_t<!std::is_same_v<T, unique_any>>>
     auto operator=(ValueType &&rhs) -> unique_any & {
         unique_any(std::forward<ValueType>(rhs)).swap(*this);
         return *this;
@@ -119,7 +119,7 @@ class unique_any {
     // Modifiers
     // https://en.cppreference.com/w/cpp/utility/any/emplace (1)
     template <class ValueType, class... Args, class T = std::decay_t<ValueType>,
-              std::enable_if_t<std::is_constructible_v<T, Args...>> * = nullptr>
+              class = std::enable_if_t<std::is_constructible_v<T, Args...>>>
     auto emplace(Args &&...args) -> T & {
         if (vtable_ != nullptr) {
             vtable_->destroy(&storage_);
@@ -129,7 +129,7 @@ class unique_any {
     }
     // https://en.cppreference.com/w/cpp/utility/any/emplace (2)
     template <class ValueType, class U, class... Args, class T = std::decay_t<ValueType>,
-              std::enable_if_t<std::is_constructible_v<T, std::initializer_list<U> &, Args...>> * = nullptr>
+              class = std::enable_if_t<std::is_constructible_v<T, std::initializer_list<U> &, Args...>>>
     auto emplace(std::initializer_list<U> il, Args &&...args) -> T & {
         if (vtable_ != nullptr) {
             vtable_->destroy(&storage_);
