@@ -29,10 +29,10 @@ union storage {
 };
 
 struct vtable_type {
-    void (*destroy)(storage *);
-    void (*move)(storage *, storage *);
-    void *(*get)(storage *);
-    const std::type_info *typeinfo;
+    void (&destroy)(storage &);
+    void (&move)(storage &, storage &);
+    void *(&get)(storage &);
+    const std::type_info &typeinfo;
 };
 
 template <class T>
@@ -62,7 +62,7 @@ class unique_any {
     // https://en.cppreference.com/w/cpp/utility/any/any (3)
     unique_any(unique_any &&other) noexcept {
         if (other.vtable_ != nullptr) {
-            other.vtable_->move(&other.storage_, &storage_);
+            other.vtable_->move(other.storage_, storage_);
             vtable_ = std::exchange(other.vtable_, nullptr);
         } else {
             vtable_ = nullptr;
@@ -72,21 +72,21 @@ class unique_any {
     template <class ValueType, class T = std::decay_t<ValueType>,
               class = std::enable_if_t<!std::is_same_v<T, unique_any> && !detail::is_in_place_type_v<T>>>
     unique_any(ValueType &&value) : vtable_(&detail::handler<T>::vtable) {
-        detail::handler<T>::create(&storage_, std::forward<ValueType>(value));
+        detail::handler<T>::create(storage_, std::forward<ValueType>(value));
     }
     // https://en.cppreference.com/w/cpp/utility/any/any (5)
     template <class ValueType, class... Args, class T = std::decay_t<ValueType>,
               class = std::enable_if_t<std::is_constructible_v<T, Args...>>>
     explicit unique_any(std::in_place_type_t<ValueType> /*unused*/, Args &&...args)
         : vtable_(&detail::handler<T>::vtable) {
-        detail::handler<T>::create(&storage_, std::forward<Args>(args)...);
+        detail::handler<T>::create(storage_, std::forward<Args>(args)...);
     }
     // https://en.cppreference.com/w/cpp/utility/any/any (6)
     template <class ValueType, class U, class... Args, class T = std::decay_t<ValueType>,
               class = std::enable_if_t<std::is_constructible_v<T, std::initializer_list<U> &, Args...>>>
     explicit unique_any(std::in_place_type_t<ValueType> /*unused*/, std::initializer_list<U> il, Args &&...args)
         : vtable_(&detail::handler<T>::vtable) {
-        detail::handler<T>::create(&storage_, il, std::forward<Args>(args)...);
+        detail::handler<T>::create(storage_, il, std::forward<Args>(args)...);
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -111,7 +111,7 @@ class unique_any {
     // https://en.cppreference.com/w/cpp/utility/any/~any
     ~unique_any() {
         if (vtable_ != nullptr) {
-            vtable_->destroy(&storage_);
+            vtable_->destroy(storage_);
         }
     }
 
@@ -122,25 +122,25 @@ class unique_any {
               class = std::enable_if_t<std::is_constructible_v<T, Args...>>>
     auto emplace(Args &&...args) -> T & {
         if (vtable_ != nullptr) {
-            vtable_->destroy(&storage_);
+            vtable_->destroy(storage_);
         }
         vtable_ = &detail::handler<T>::vtable;
-        return detail::handler<T>::create(&storage_, std::forward<Args>(args)...);
+        return detail::handler<T>::create(storage_, std::forward<Args>(args)...);
     }
     // https://en.cppreference.com/w/cpp/utility/any/emplace (2)
     template <class ValueType, class U, class... Args, class T = std::decay_t<ValueType>,
               class = std::enable_if_t<std::is_constructible_v<T, std::initializer_list<U> &, Args...>>>
     auto emplace(std::initializer_list<U> il, Args &&...args) -> T & {
         if (vtable_ != nullptr) {
-            vtable_->destroy(&storage_);
+            vtable_->destroy(storage_);
         }
         vtable_ = &detail::handler<T>::vtable;
-        return detail::handler<T>::create(&storage_, il, std::forward<Args>(args)...);
+        return detail::handler<T>::create(storage_, il, std::forward<Args>(args)...);
     }
     // https://en.cppreference.com/w/cpp/utility/any/reset
     void reset() noexcept {
         if (vtable_ != nullptr) {
-            vtable_->destroy(&storage_);
+            vtable_->destroy(storage_);
             vtable_ = nullptr;
         }
     }
@@ -154,13 +154,13 @@ class unique_any {
         }
         if (vtable_ != nullptr && other.vtable_ != nullptr) {
             auto tmp = detail::storage();
-            other.vtable_->move(&other.storage_, &tmp);
-            vtable_->move(&storage_, &other.storage_);
-            other.vtable_->move(&tmp, &storage_);
+            other.vtable_->move(other.storage_, tmp);
+            vtable_->move(storage_, other.storage_);
+            other.vtable_->move(tmp, storage_);
         } else if (vtable_ != nullptr) {
-            vtable_->move(&storage_, &other.storage_);
+            vtable_->move(storage_, other.storage_);
         } else if (other.vtable_ != nullptr) {
-            other.vtable_->move(&other.storage_, &storage_);
+            other.vtable_->move(other.storage_, storage_);
         }
         std::swap(vtable_, other.vtable_);
     }
@@ -171,13 +171,13 @@ class unique_any {
     [[nodiscard]] auto has_value() const noexcept -> bool { return vtable_ != nullptr; }
     // https://en.cppreference.com/w/cpp/utility/any/type
     [[nodiscard]] auto type() const noexcept -> const std::type_info & {
-        return vtable_ != nullptr ? *vtable_->typeinfo : typeid(void);
+        return vtable_ != nullptr ? vtable_->typeinfo : typeid(void);
     }
 
   private:
     template <typename T>
     auto unsafe_cast() -> T * {
-        return static_cast<T *>(vtable_->get(&storage_));
+        return static_cast<T *>(vtable_->get(storage_));
     }
 
     template <typename T>
@@ -201,23 +201,23 @@ struct small_buffer_handler {
   private:
     using allocator = std::allocator<T>;
     using allocator_traits = std::allocator_traits<allocator>;
-    static auto cast(storage *s) -> T * { return static_cast<T *>(static_cast<void *>(&s->buf)); }
-    static void destroy(storage *s) {
+    static auto cast(storage &s) -> T * { return static_cast<T *>(static_cast<void *>(&s.buf)); }
+    static void destroy(storage &s) {
         auto alloc = allocator{};
         allocator_traits::destroy(alloc, cast(s));
     }
-    static void move(storage *src, storage *dst) {
+    static void move(storage &src, storage &dst) {
         auto alloc = allocator{};
         allocator_traits::construct(alloc, cast(dst), std::move(*cast(src)));
         allocator_traits::destroy(alloc, cast(src));
     }
-    static auto get(storage *s) -> void * { return cast(s); }
+    static auto get(storage &s) -> void * { return cast(s); }
 
   public:
-    static constexpr inline vtable_type vtable = {&destroy, &move, &get, &typeid(T)};
+    static constexpr inline vtable_type vtable = {destroy, move, get, typeid(T)};
 
     template <class... Args>
-    static auto create(storage *s, Args &&...args) -> T & {
+    static auto create(storage &s, Args &&...args) -> T & {
         auto alloc = allocator{};
         auto *ret = cast(s);
         allocator_traits::construct(alloc, ret, std::forward<Args>(args)...);
@@ -238,25 +238,25 @@ struct default_handler {
   private:
     using allocator = std::allocator<T>;
     using allocator_traits = std::allocator_traits<allocator>;
-    static void destroy(storage *s) {
+    static void destroy(storage &s) {
         auto alloc = allocator{};
-        auto *ptr = static_cast<T *>(s->ptr);
+        auto *ptr = static_cast<T *>(s.ptr);
         allocator_traits::destroy(alloc, ptr);
         allocator_traits::deallocate(alloc, ptr, 1);
     }
-    static void move(storage *src, storage *dst) { dst->ptr = src->ptr; }
-    static auto get(storage *s) -> void * { return s->ptr; }
+    static void move(storage &src, storage &dst) { dst.ptr = src.ptr; }
+    static auto get(storage &s) -> void * { return s.ptr; }
 
   public:
-    static constexpr inline vtable_type vtable = {&destroy, &move, &get, &typeid(T)};
+    static constexpr inline vtable_type vtable = {destroy, move, get, typeid(T)};
 
     template <class... Args>
-    static auto create(storage *s, Args &&...args) -> T & {
+    static auto create(storage &s, Args &&...args) -> T & {
         auto alloc = allocator{};
         auto holder = std::unique_ptr<T, allocator_deleter<allocator, 1>>(allocator_traits::allocate(alloc, 1));
         auto *ptr = holder.get();
         allocator_traits::construct(alloc, ptr, std::forward<Args>(args)...);
-        s->ptr = holder.release();
+        s.ptr = holder.release();
         return *ptr;
     }
 };
