@@ -4,7 +4,9 @@
 
 #include "mcpp/unique_any.hpp"
 #include "doctest/doctest.h"
+#include <atomic>
 #include <string>
+#include <utility>
 
 using namespace mcpp;
 
@@ -74,4 +76,14 @@ TEST_CASE("allocating") {
     pre = n_allocs;
     any = {};
     CHECK(n_allocs - pre == -1);
+}
+
+TEST_CASE("immovable") {
+    auto any = unique_any(std::in_place_type<std::atomic<int>>, 42);
+    CHECK(any.has_value());
+    CHECK(any_cast<std::atomic<int> &>(any) == 42);
+    auto any2 = std::move(any);
+    CHECK(!any.has_value());
+    CHECK(any2.has_value());
+    CHECK(any_cast<std::atomic<int> &>(any2) == 42);
 }
