@@ -57,23 +57,22 @@ class unique_any {
         }
     }
     // https://en.cppreference.com/w/cpp/utility/any/any (4)
-    template <class ValueType, std::enable_if_t<!std::is_same_v<std::decay_t<ValueType>, unique_any> &&
-                                                !detail::is_in_place_type_v<std::decay_t<ValueType>>> * = nullptr>
+    template <class ValueType, class T = std::decay_t<ValueType>,
+              std::enable_if_t<!std::is_same_v<T, unique_any> && !detail::is_in_place_type_v<T>> * = nullptr>
     unique_any(ValueType &&value) {
-        detail::handler<std::decay_t<ValueType>>::create(*this, std::forward<ValueType>(value));
+        detail::handler<T>::create(*this, std::forward<ValueType>(value));
     }
     // https://en.cppreference.com/w/cpp/utility/any/any (5)
-    template <class ValueType, class... Args,
-              std::enable_if_t<std::is_constructible_v<std::decay_t<ValueType>, Args...>> * = nullptr>
+    template <class ValueType, class... Args, class T = std::decay_t<ValueType>,
+              std::enable_if_t<std::is_constructible_v<T, Args...>> * = nullptr>
     explicit unique_any(std::in_place_type_t<ValueType> /*unused*/, Args &&...args) {
-        detail::handler<std::decay_t<ValueType>>::create(*this, std::forward<Args>(args)...);
+        detail::handler<T>::create(*this, std::forward<Args>(args)...);
     }
     // https://en.cppreference.com/w/cpp/utility/any/any (6)
-    template <class ValueType, class U, class... Args,
-              std::enable_if_t<std::is_constructible_v<std::decay_t<ValueType>, std::initializer_list<U> &, Args...>>
-                  * = nullptr>
+    template <class ValueType, class U, class... Args, class T = std::decay_t<ValueType>,
+              std::enable_if_t<std::is_constructible_v<T, std::initializer_list<U> &, Args...>> * = nullptr>
     explicit unique_any(std::in_place_type_t<ValueType> /*unused*/, std::initializer_list<U> il, Args &&...args) {
-        detail::handler<std::decay_t<ValueType>>::create(*this, il, std::forward<Args>(args)...);
+        detail::handler<T>::create(*this, il, std::forward<Args>(args)...);
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -86,7 +85,8 @@ class unique_any {
         return *this;
     }
     // https://en.cppreference.com/w/cpp/utility/any/operator%3D (3)
-    template <typename ValueType, std::enable_if_t<!std::is_same_v<std::decay_t<ValueType>, unique_any>> * = nullptr>
+    template <typename ValueType, class T = std::decay_t<ValueType>,
+              std::enable_if_t<!std::is_same_v<T, unique_any>> * = nullptr>
     auto operator=(ValueType &&rhs) -> unique_any & {
         unique_any(std::forward<ValueType>(rhs)).swap(*this);
         return *this;
@@ -100,19 +100,18 @@ class unique_any {
     ///////////////////////////////////////////////////////////////////////////
     // Modifiers
     // https://en.cppreference.com/w/cpp/utility/any/emplace (1)
-    template <class ValueType, class... Args,
-              std::enable_if_t<std::is_constructible_v<std::decay_t<ValueType>, Args...>> * = nullptr>
-    auto emplace(Args &&...args) -> std::decay_t<ValueType> & {
+    template <class ValueType, class... Args, class T = std::decay_t<ValueType>,
+              std::enable_if_t<std::is_constructible_v<T, Args...>> * = nullptr>
+    auto emplace(Args &&...args) -> T & {
         reset();
-        return detail::handler<std::decay_t<ValueType>>::create(*this, std::forward<Args>(args)...);
+        return detail::handler<T>::create(*this, std::forward<Args>(args)...);
     }
     // https://en.cppreference.com/w/cpp/utility/any/emplace (2)
-    template <class ValueType, class U, class... Args,
-              std::enable_if_t<std::is_constructible_v<std::decay_t<ValueType>, std::initializer_list<U> &, Args...>>
-                  * = nullptr>
-    auto emplace(std::initializer_list<U> il, Args &&...args) -> std::decay_t<ValueType> & {
+    template <class ValueType, class U, class... Args, class T = std::decay_t<ValueType>,
+              std::enable_if_t<std::is_constructible_v<T, std::initializer_list<U> &, Args...>> * = nullptr>
+    auto emplace(std::initializer_list<U> il, Args &&...args) -> T & {
         reset();
-        return detail::handler<std::decay_t<ValueType>>::create(*this, il, std::forward<Args>(args)...);
+        return detail::handler<T>::create(*this, il, std::forward<Args>(args)...);
     }
     // https://en.cppreference.com/w/cpp/utility/any/reset
     void reset() noexcept {
