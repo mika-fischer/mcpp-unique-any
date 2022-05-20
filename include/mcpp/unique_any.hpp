@@ -28,7 +28,7 @@ union storage {
     small_buffer buf;
 };
 
-struct vtable {
+struct vtable_type {
     void (*destroy)(storage *);
     void (*move)(storage *, storage *);
     void *(*get)(storage *);
@@ -191,7 +191,7 @@ class unique_any {
     template <typename T>
     friend auto any_cast(unique_any *operand) noexcept -> T *;
 
-    const detail::vtable *vtable_;
+    const detail::vtable_type *vtable_;
     detail::storage storage_;
 };
 
@@ -214,7 +214,7 @@ struct small_buffer_handler {
     static auto get(storage *s) -> void * { return cast(s); }
 
   public:
-    static constexpr inline vtable vtable = {&destroy, &move, &get, &typeid(T)};
+    static constexpr inline vtable_type vtable = {&destroy, &move, &get, &typeid(T)};
 
     template <class... Args>
     static auto create(storage *s, Args &&...args) -> T & {
@@ -248,7 +248,7 @@ struct default_handler {
     static auto get(storage *s) -> void * { return s->ptr; }
 
   public:
-    static constexpr inline vtable vtable = {&destroy, &move, &get, &typeid(T)};
+    static constexpr inline vtable_type vtable = {&destroy, &move, &get, &typeid(T)};
 
     template <class... Args>
     static auto create(storage *s, Args &&...args) -> T & {
