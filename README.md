@@ -19,7 +19,6 @@ Other than working with non-copyable types, and being non-copyable, this works t
 
 
 ## Future work
-- Use vtable approach
 - Support no-rtti mode
 - Support no-exception mode
 - Support C++14?
