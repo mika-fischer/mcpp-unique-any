@@ -217,7 +217,7 @@ auto any_cast(const inplace_unique_any<S, A> &operand) -> T {
 }
 // (2)
 template <class T, size_t S, size_t A>
-auto any_cast(inplace_unique_any<S, A> &operand) -> T & {
+auto any_cast(inplace_unique_any<S, A> &operand) -> T {
     using U = std::remove_cvref_t<T>;
     static_assert(std::is_constructible_v<T, U &>);
     if (auto *ptr = any_cast<U>(&operand)) {
