@@ -2,28 +2,30 @@
 // Distributed under the Boost Software License, Version 1.0.
 // (See accompanying file LICENSE.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
 
-#include "mcpp/unique_any.hpp"
+#include "mcpp/inplace_unique_any.hpp"
 #include "alloc.hpp"
 #include "doctest/doctest.h"
-#include <atomic>
+#include <memory>
 #include <string>
 #include <utility>
+
+// NOLINTBEGIN(cppcoreguidelines-avoid-do-while,misc-use-anonymous-namespace)
 
 using namespace mcpp;
 
 namespace {
 
 struct small {
-    void *a[3];
+    std::array<void *, 3> a;
 };
 
 struct large {
-    void *a[4];
+    std::array<void *, 4> a;
 };
 
-static_assert(sizeof(unique_any) == 4 * sizeof(void *));
-static_assert(sizeof(small) + sizeof(void *) <= sizeof(unique_any));
-static_assert(sizeof(large) + sizeof(void *) > sizeof(unique_any));
+static_assert(sizeof(inplace_unique_any<sizeof(large), alignof(large)>) == sizeof(large) + sizeof(void *));
+
+using unique_any = inplace_unique_any<sizeof(large), alignof(large)>;
 
 } // namespace
 
@@ -60,19 +62,21 @@ TEST_CASE("small_buffer") {
 TEST_CASE("allocating") {
     auto pre = n_allocs;
     auto any = unique_any(large{});
-    CHECK(n_allocs - pre == 1);
+    CHECK(n_allocs - pre == 0);
 
     pre = n_allocs;
     any = {};
-    CHECK(n_allocs - pre == -1);
+    CHECK(n_allocs - pre == 0);
 }
 
-TEST_CASE("immovable") {
-    auto any = unique_any(std::in_place_type<std::atomic<int>>, 42);
-    CHECK(any.has_value());
-    CHECK(any_cast<std::atomic<int> &>(any) == 42);
-    auto any2 = std::move(any);
-    CHECK(!any.has_value());
-    CHECK(any2.has_value());
-    CHECK(any_cast<std::atomic<int> &>(any2) == 42);
-}
+// TEST_CASE("immovable") {
+//     auto any = unique_any(std::in_place_type<std::atomic<int>>, 42);
+//     CHECK(any.has_value());
+//     CHECK(any_cast<std::atomic<int> &>(any) == 42);
+//     auto any2 = std::move(any);
+//     CHECK(!any.has_value());
+//     CHECK(any2.has_value());
+//     CHECK(any_cast<std::atomic<int> &>(any2) == 42);
+// }
+
+// NOLINTEND(cppcoreguidelines-avoid-do-while,misc-use-anonymous-namespace)
