@@ -3,8 +3,12 @@ Checks: >-
   *,
   -abseil*,-altera-*,-android-*,-darwin-*,-fuchsia-*,-google-*,-linuxkernel-*,-llvm*,-mpi-*,-objc-*,-zircon-*,
   -cppcoreguidelines-pro-type-union-access,
-  -readability-identifier-length
+  -readability-identifier-length,
+  -readability-magic-numbers,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -hicpp-uppercase-literal-suffix
+
 CheckOptions:
   # https://clang.llvm.org/extra/clang-tidy/checks/misc-non-private-member-variables-in-classes.html
-  - key:   misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic
+  - key: misc-non-private-member-variables-in-classes.IgnoreClassesWithAllMemberVariablesBeingPublic
     value: true
