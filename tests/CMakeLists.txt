@@ -6,6 +6,6 @@ FetchContent_Declare(doctest
 FetchContent_MakeAvailable(doctest)
 include(${doctest_SOURCE_DIR}/scripts/cmake/doctest.cmake)
 
-add_executable(test-unique-any alloc.cpp inplace_unique_any.cpp unique_any.cpp)
+add_executable(test-unique-any alloc.cpp inplace_any_view.cpp inplace_unique_any.cpp unique_any.cpp)
 target_link_libraries(test-unique-any PRIVATE mcpp::unique-any doctest_with_main)
 doctest_discover_tests(test-unique-any)
