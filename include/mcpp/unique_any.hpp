@@ -121,21 +121,19 @@ class unique_any {
     template <class ValueType, class... Args, class T = std::decay_t<ValueType>,
               class = std::enable_if_t<std::is_constructible_v<T, Args...>>>
     auto emplace(Args &&...args) -> T & {
-        if (vtable_ != nullptr) {
-            vtable_->destroy(storage_);
-        }
+        reset();
+        auto &result = detail::handler<T>::create(storage_, std::forward<Args>(args)...);
         vtable_ = &detail::handler<T>::vtable;
-        return detail::handler<T>::create(storage_, std::forward<Args>(args)...);
+        return result;
     }
     // https://en.cppreference.com/w/cpp/utility/any/emplace (2)
     template <class ValueType, class U, class... Args, class T = std::decay_t<ValueType>,
               class = std::enable_if_t<std::is_constructible_v<T, std::initializer_list<U> &, Args...>>>
     auto emplace(std::initializer_list<U> il, Args &&...args) -> T & {
-        if (vtable_ != nullptr) {
-            vtable_->destroy(storage_);
-        }
+        reset();
+        auto &result = detail::handler<T>::create(storage_, il, std::forward<Args>(args)...);
         vtable_ = &detail::handler<T>::vtable;
-        return detail::handler<T>::create(storage_, il, std::forward<Args>(args)...);
+        return result;
     }
     // https://en.cppreference.com/w/cpp/utility/any/reset
     void reset() noexcept {
