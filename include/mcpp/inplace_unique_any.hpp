@@ -179,10 +179,19 @@ class inplace_unique_any { // NOLINT(cppcoreguidelines-pro-type-member-init,hicp
             return;
         }
         alignas(ALIGN) std::array<std::byte, SIZE> temp_buffer;
+        // this: A, other: B, temp: <uninitialized>
         this->vtable_->move(temp_buffer.data(), this->buffer_.data());
+        // this: A(moved-from), other: B, temp: A
+        this->vtable_->destroy(this->buffer_.data());
+        // this: <uninitialized>, other: B, temp: A
         other.vtable_->move(this->buffer_.data(), other.buffer_.data());
+        // this: B, other: B(moved-from), temp: A
+        other.vtable_->destroy(other.buffer_.data());
+        // this: B, other: <uninitialized>, temp: A
         this->vtable_->move(other.buffer_.data(), temp_buffer.data());
+        // this: B, other: A, temp: A(moved-from)
         this->vtable_->destroy(temp_buffer.data());
+        // this: B, other: A, temp: <uninitialized>
         std::swap(this->vtable_, other.vtable_);
     }
 
