@@ -163,7 +163,7 @@ auto any_cast(const inplace_any_view &operand) -> T {
 }
 // (2)
 template <class T>
-auto any_cast(inplace_any_view &operand) -> T & {
+auto any_cast(inplace_any_view &operand) -> T {
     using U = std::remove_cvref_t<T>;
     static_assert(std::is_constructible_v<T, U &>);
     if (auto *ptr = any_cast<U>(&operand)) {
