@@ -6,6 +6,7 @@
 
 #include <any>
 #include <memory>
+#include <new>
 #include <type_traits>
 #include <typeinfo>
 #include <utility>
@@ -175,7 +176,7 @@ class unique_any {
   private:
     template <typename T>
     auto unsafe_cast() -> T * {
-        return static_cast<T *>(vtable_->get(storage_));
+        return std::launder(static_cast<T *>(vtable_->get(storage_)));
     }
 
     template <typename T>
@@ -199,7 +200,7 @@ struct small_buffer_handler {
   private:
     using allocator = std::allocator<T>;
     using allocator_traits = std::allocator_traits<allocator>;
-    static auto cast(storage &s) -> T * { return static_cast<T *>(static_cast<void *>(&s.buf)); }
+    static auto cast(storage &s) -> T * { return std::launder(static_cast<T *>(static_cast<void *>(&s.buf))); }
     static void destroy(storage &s) {
         auto alloc = allocator{};
         allocator_traits::destroy(alloc, cast(s));
@@ -238,7 +239,7 @@ struct default_handler {
     using allocator_traits = std::allocator_traits<allocator>;
     static void destroy(storage &s) {
         auto alloc = allocator{};
-        auto *ptr = static_cast<T *>(s.ptr);
+        auto *ptr = std::launder(static_cast<T *>(s.ptr));
         allocator_traits::destroy(alloc, ptr);
         allocator_traits::deallocate(alloc, ptr, 1);
     }

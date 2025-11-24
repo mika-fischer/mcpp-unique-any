@@ -6,6 +6,7 @@
 
 #include <cstddef>
 #include <initializer_list>
+#include <new>
 #include <stdexcept>
 #include <type_traits>
 #include <typeinfo>
@@ -30,8 +31,10 @@ template <typename T>
 auto vtable_for() -> const inplace_any_view_vtable & {
     // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
     static constexpr auto vtable = inplace_any_view_vtable{
-        .destroy = [](void *buf) noexcept -> void { reinterpret_cast<T *>(buf)->~T(); },
-        .move = [](void *dst, void *src) noexcept -> void { new (dst) T(std::move(*reinterpret_cast<T *>(src))); },
+        .destroy = [](void *buf) noexcept -> void { std::launder(reinterpret_cast<T *>(buf))->~T(); },
+        .move = [](void *dst, void *src) noexcept -> void {
+            new (dst) T(std::move(*std::launder(reinterpret_cast<T *>(src))));
+        },
         .type_info = &typeid(T),
     };
     return vtable;
@@ -187,7 +190,7 @@ auto any_cast(const inplace_any_view *operand) noexcept -> const T * {
     static_assert(!std::is_void_v<T>);
     return operand && operand->type() == typeid(T)
                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-               ? reinterpret_cast<const T *>(operand->buffer_)
+               ? std::launder(reinterpret_cast<const T *>(operand->buffer_))
                : nullptr;
 }
 // (5)
@@ -196,7 +199,7 @@ auto any_cast(inplace_any_view *operand) noexcept -> T * {
     static_assert(!std::is_void_v<T>);
     return operand && operand->type() == typeid(T)
                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-               ? reinterpret_cast<T *>(operand->buffer_)
+               ? std::launder(reinterpret_cast<T *>(operand->buffer_))
                : nullptr;
 }
 

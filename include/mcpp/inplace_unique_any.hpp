@@ -7,6 +7,7 @@
 #include <array>
 #include <cstddef>
 #include <initializer_list>
+#include <new>
 #include <type_traits>
 #include <typeinfo>
 #include <utility>
@@ -30,8 +31,10 @@ template <typename T>
 auto vtable_for() -> const inplace_unique_any_vtable & {
     // NOLINTBEGIN(cppcoreguidelines-pro-type-reinterpret-cast)
     static constexpr auto vtable = inplace_unique_any_vtable{
-        .destroy = [](void *buf) noexcept -> void { reinterpret_cast<T *>(buf)->~T(); },
-        .move = [](void *dst, void *src) noexcept -> void { new (dst) T(std::move(*reinterpret_cast<T *>(src))); },
+        .destroy = [](void *buf) noexcept -> void { std::launder(reinterpret_cast<T *>(buf))->~T(); },
+        .move = [](void *dst, void *src) noexcept -> void {
+            new (dst) T(std::move(*std::launder(reinterpret_cast<T *>(src))));
+        },
         .type_info = &typeid(T),
     };
     return vtable;
@@ -250,7 +253,7 @@ auto any_cast(const inplace_unique_any<S, A> *operand) noexcept -> const T * {
     static_assert(!std::is_void_v<T>);
     return operand && operand->type() == typeid(T)
                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-               ? reinterpret_cast<const T *>(operand->buffer_.data())
+               ? std::launder(reinterpret_cast<const T *>(operand->buffer_.data()))
                : nullptr;
 }
 // (5)
@@ -259,7 +262,7 @@ auto any_cast(inplace_unique_any<S, A> *operand) noexcept -> T * {
     static_assert(!std::is_void_v<T>);
     return operand && operand->type() == typeid(T)
                // NOLINTNEXTLINE(cppcoreguidelines-pro-type-reinterpret-cast)
-               ? reinterpret_cast<T *>(operand->buffer_.data())
+               ? std::launder(reinterpret_cast<T *>(operand->buffer_.data()))
                : nullptr;
 }
 
